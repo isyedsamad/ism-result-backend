@@ -11,16 +11,21 @@ app.get("/result", async (req, res) => {
   if (!rid) return res.status(400).send("Result ID missing");
 
   try {
-    // 🔹 Fetch result info
+    //Fetch result info
     const resultSnap = await db.ref(`Result/${rid}`).once("value");
     if (!resultSnap.exists()) return res.status(404).send("Result not found");
     const result = resultSnap.val();
 
-    // 🔹 Fetch students
+    //Fetch students
     const studentsSnap = await db.ref(`ResultStudent/${rid}`).once("value");
-    const students = studentsSnap.val();
+    const raw = studentsSnap.val();
+    const students = Object.entries(raw).map(([id, s]) => ({
+      id,
+      ...s,
+    }));
+    students.sort((a, b) => (b.theory + b.practical) - (a.theory + a.practical));
 
-    // 🔹 Auto-download headers
+    //Auto-download headers
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=ISM_Result_${rid}.pdf`
